@@ -1,31 +1,40 @@
 import osmnx as ox
 import csv
 
-states = ["Vienna", "Lower Austria", "Upper Austria", "Burgenland", "Styria", "Carinthia", "Salzburg", "Tyrol", "Vorarlberg"]
+def plot_network(state, country):
+    filepath = f"networks/{country}/{state}.graphml"
+    G = ox.load_graphml(filepath)
+    ox.plot_graph(G)
 
-for state in states:
-    location = f"{state}, Austria"
-    directory = f"networks/Austria/{location}-cf"
+def generate_network(state, country, filter):
+    location = {'state': state, 'country': country}
+    filepath = f"networks/{country}/{state}.graphml"
 
-    cf = '["highway"~"motorway|primary|secondary"]'
+    G = ox.graph_from_place(location, network_type="drive", custom_filter = filter)
 
-    G = ox.graph_from_place(location, network_type="drive", custom_filter=cf)
-    G_proj = ox.project_graph(G)
-    stats = ox.basic_stats(G_proj, clean_int_tol=15)
-    print(stats)
+    save_stats(ox.project_graph(G), state, country)
+    ox.save_graphml(G, filepath)
 
-    with open(directory + ".csv", "w", newline="") as file:
+def save_stats(graph, state, country):
+    savefile = f"networks/{country}/{state}.csv"
+    stats = ox.basic_stats(graph, clean_int_tol=15)
+
+    with open(savefile, "w", newline="") as file:
         writer = csv.DictWriter(file, fieldnames= stats.keys())
         writer.writeheader()
         writer.writerow(stats)
 
 
-    filepath = directory + ".graphml"
-    ox.save_graphml(G, filepath)
+states_dict = {"Austria": ["Vienna", "Lower Austria", "Upper Austria", "Burgenland", "Styria", "Carinthia", "Salzburg", "Tyrol", "Vorarlberg"],\
+                "Australia": ["Queensland", "New South Wales", "Australian Capital Territory", "Victoria", "Tasmania", "South Australia", "Northern Territory", "Western Australia"]}
+cf = '["highway"~"motorway|primary"]'
 
-    fig, ax = ox.plot_graph(G)
+# for country in states_dict.keys():
+#     for state in states_dict[country]:
+#         generate_network(state, country, cf)
+#         plot_network(state, country)
 
-def plot_networks():
-    for state in states:
-        filepath = "networks/gaming.graphml"
-        G = ox.load_graphml(filepath)
+# generate_network("Tasmania", "Australia", cf)
+# plot_network("Tasmania", "Australia")
+
+graph = ox.graph_from_xml('OSM-Data\northern_territory.osm.pbf')
