@@ -1,0 +1,2 @@
+n,m,k_avg,edge_length_total,edge_length_avg,streets_per_node_avg,streets_per_node_counts,streets_per_node_proportions,intersection_count,street_length_total,street_segment_count,street_length_avg,circuity_avg,self_loop_proportion,clean_intersection_count
+173,342,3.953757225433526,392023.30000000016,1146.266959064328,2.6820809248554913,"{0: 0, 1: 25, 2: 16, 3: 121, 4: 11}","{0: 0.0, 1: 0.14450867052023122, 2: 0.09248554913294797, 3: 0.6994219653179191, 4: 0.06358381502890173}",148,207433.21500000008,239,867.9214016736405,1.1429026402332936,0.008368200836820083,100
