@@ -1,68 +1,76 @@
-import osmnx as ox
+from osmnx.utils_geo import sample_points
+from osmnx import load_graphml
 import os
+import csv
+import requests
 
-api_key = os.environ.get('GOOGLE_MAPS_API_KEY')
+class StreetViewImages:
+  api_key = os.environ.get('GOOGLE_MAPS_API_KEY')
+  streetview_api = 'https://maps.googleapis.com/maps/api/streetview'
+  metadata_api = 'https://maps.googleapis.com/maps/api/streetview/metadata'
 
-site_api='https://maps.googleapis.com/maps/api/streetview'
-site_metadata='https://maps.googleapis.com/maps/api/streetview/metadata'
+  def __init__(self, state, country):
+    self.state = state
+    self.country = country
+    self.imagepath = f"images/{country}/{state}"
+    self.graph_file = f"networks/{country}/{state}.graphml"
+    self.network = load_graphml(self.graph_file)
+    with open (os.path.join(self.imagepath, "coordinates.csv"), "r") as file:
+      last_line = file.readlines()[-1]
+      self.current_id = int(last_line[0])
+  
+  def generate_points(self, n):
+    return sample_points(self.network, n)
+  
+  def save_image(self, response):
+    if response.status_code == 200:
+      if not os.path.exists(self.imagepath):
+        os.makedirs(self.imagepath)
+      with open(os.path.join(self.imagepath, f'{self.current_id}.jpg'), "wb") as file:
+        file.write(response.content)
 
-states_dict = {"Austria": ["Lower Austria", "Upper Austria", "Burgenland", "Styria", "Carinthia", "Salzburg", "Tyrol", "Vorarlberg"],\
-                "Australia": ["Australian Capital Territory", "Tasmania", "Northern Territory", "Western Australia", "South Australia", "Queensland", "Victoria", "New South Wales"]}
+  def save_coordinates(self, coordinates):  
+      coordinates_filename = os.path.join(self.imagepath, 'coordinates.csv')
+      coordinates["i"] = self.current_id
+      fieldnames = ["i", "lat", "lng"]
+      with open(coordinates_filename, "a", newline = "") as file:
+        writer = csv.DictWriter(file, fieldnames = fieldnames)
+        if not os.path.isfile(coordinates_filename):
+          writer.writeheader() 
+        writer.writerow(coordinates)
 
-def request_images(points, imagepath):
-  for (i,loc) in enumerate(points):
-    coords = str(loc.y) + "," + str(loc.x)
-    print(coords)
-
+  def request_image(self, location):
+    location = f"{location.y},{location.x}"
     params = {
             'size': '640x640', # max 640x640 pixels
-            'location': coords,
+            'location': location,
+            'source': 'outdoor',
+            'radius': 100,
             'return_error_code': 'true',
-            'key': api_key
+            'key': self.api_key,
           }
-    response = requests.get(site_api, params)
-    if response.status_code == 200:
-      with open(os.path.join(imagepath, f'{state},{country}_{i}.jpg'), "wb") as file:
-        file.write(response.content)
-      
-      with open(os.path.join(imagepath, 'coords.csv', "wb") as file:
-        
 
-    print(response.status_code)
+    # Check first, if an image is available at the given location (metadata-API calls are free)
+    metadata = requests.get(self.metadata_api, params).json()
 
-for country in states_dict.keys():
-  for state in states_dict[country]:
-    filepath = f"networks/{country}/{state}.graphml"
-    imagepath = f"images/{country}/{state}"
+    # If an image is available, save it and its coordinates in the respective folder
+    if metadata['status'] == 'OK':
+      coordinates = metadata['location']
+      response = requests.get(self.streetview_api, params)
+      self.current_id += 1
+      self.save_image(response)
+      self.save_coordinates(coordinates)
 
-    G = ox.load_graphml(filepath)
-    points = ox.utils_geo.sample_points(G, 5)
-    request_images(points, imagepath)
+num_of_locations = 100
+states_dict = {"Austria": ["Lower Austria", "Upper Austria", "Burgenland", "Styria", "Carinthia", "Salzburg", "Tyrol", "Vorarlberg", "Vienna"],\
+                "Australia": ["Australian Capital Territory", "Tasmania", "Northern Territory", "Western Australia", "South Australia", "Queensland", "Victoria", "New South Wales"],\
+                "New Zealand": ["West Coast", "Marlborough", "Gisborne", "Nelson", "Tasman", "Southland", "Taranaki", "Hawke's Bay", "Northland", "Otago", "Manawatū-Whanganui", "Bay of Plenty", "Waikato", "Wellington", "Canterbury", "Auckland"]}
 
+for state in states_dict["Austria"]:
+  if state != "Vienna":
+    streetview_images = StreetViewImages(state, "Austria")
+    points = streetview_images.generate_points(num_of_locations)
+    for location in points:
+      streetview_images.request_image(location)
+    print(streetview_images.current_id)
 
-# https://maps.googleapis.com/maps/api/streetview?size=600x300&location=46.414382,10.013988&heading=151.78&pitch=-0.76&key=YOUR_API_KEY&signature=YOUR_SIGNATURE
-
-# metadata_links = [site_metadata + '?' + urlencode(p) for p in params]
-# metadata = [requests.get(url, stream=True).json() for url in metadata_links]
-
-# metadata_response = requests.get(site_metadata, params)
-# print(metadata_response)
-# response = requests.get(site_api, params)
-
-# with open(os.path.join(download_folder, f'street_view.jpg'), "wb") as file:
-#   file.write(response.content)
-
-# Create a results object
-# results = Results(params)
-
-# # Preview results
-# results.preview()
-
-# # Download images to directory 'downloads'
-# results.download_links('Machine Learning Algorithms/Projekt/images')
-
-# # Save links
-# results.save_links('links.txt')
-
-# # Save metadata
-# results.save_metadata('metadata.json')

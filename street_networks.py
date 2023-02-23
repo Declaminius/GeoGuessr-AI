@@ -4,47 +4,70 @@ import csv
 # ox.settings.timeout = 600
 # ox.overpass_settings = "[out:json][timeout:{600}]"
 
-def plot_network(state, country):
-    filepath = f"networks/{country}/{state}.graphml"
-    G = ox.load_graphml(filepath)
-    ox.plot_graph(G)
+class StreetNetwork:
 
-def generate_network(state, country, filter):
-    if state == "Vienna":
-        location = {'city': state, 'country': country}
-    else:
-        location = {'state': state, 'country': country}
-    filepath = f"networks/{country}/{state}.graphml"
+    def __init__(self, state, country, filepath = None, savefile = None):
+        self.filepath = filepath
+        self.state = state
+        self.country = country
+        self.savefile = None
 
-    G = ox.graph_from_place(location, network_type="drive", custom_filter = filter)
-    G = ox.project_graph(G)
+    def plot_network(self):
+        if self.savefile is not None:
+            G = ox.load_graphml(self.savefile)
+            ox.plot_graph(G)
+        else:
+            raise Exception("Graph not yet generated")
+    
+    def generate_network(self, filter):
+        if self.filepath is None:
+            self.generate_network_overpass(filter)
+        else:
+            self.generate_network_osm()
 
-    save_stats(G, state, country)
-    ox.save_graphml(G, filepath)
+    def generate_network_overpass(self, filter):
+        if self.state == "Vienna":
+            location = {'city': self.state, 'country': self.country}
+        else:
+            location = {'state': self.state, 'country': self.country}
+        self.savefile = f"networks/{self.country}/{self.state}.graphml"
 
-def save_stats(graph, state, country):
-    savefile = f"networks/{country}/{state}.csv"
-    stats = ox.basic_stats(graph, clean_int_tol=15)
+        G = ox.graph_from_place(location, network_type="drive", custom_filter = filter)
+        # G = ox.project_graph(G)
 
-    with open(savefile, "w", newline="") as file:
-        writer = csv.DictWriter(file, fieldnames= stats.keys())
-        writer.writeheader()
-        writer.writerow(stats)
+        self.save_stats(G)
+        ox.save_graphml(G, self.savefile)
+
+    def generate_network_osm(self):
+        self.savefile = f"networks/{self.country}/{self.state}.graphml"
+
+        G = ox.graph_from_xml(self.filepath)
+        # G = ox.project_graph(G)
+        self.save_stats(G)
+        ox.save_graphml(G, self.savefile)
+
+    def save_stats(self, graph):
+        savefile = f"networks/{self.country}/{self.state}.csv"
+        try:
+            stats = ox.basic_stats(graph, clean_int_tol=15)
+        except Exception as e:
+            print(e)
+            stats = {"n": len(graph.nodes), "m": len(graph.edges)}
+
+        with open(savefile, "w", newline="") as file:
+            writer = csv.DictWriter(file, fieldnames= stats.keys())
+            writer.writeheader()
+            writer.writerow(stats)
 
 
-states_dict = {"Austria": ["Lower Austria", "Upper Austria", "Burgenland", "Styria", "Carinthia", "Salzburg", "Tyrol", "Vorarlberg"],\
+states_dict = {"Austria": ["Lower Austria", "Upper Austria", "Burgenland", "Styria", "Carinthia", "Salzburg", "Tyrol", "Vorarlberg", "Vienna"],\
                 "Australia": ["Australian Capital Territory", "Tasmania", "Northern Territory", "Western Australia", "South Australia", "Queensland", "Victoria", "New South Wales"],\
                 "New Zealand": ["West Coast", "Marlborough", "Gisborne", "Nelson", "Tasman", "Southland", "Taranaki", "Hawke's Bay", "Northland", "Otago", "Manawatū-Whanganui", "Bay of Plenty", "Waikato", "Wellington", "Canterbury", "Auckland"]}
 cf = '["highway"~"motorway|trunk|primary|secondary"]'
 
-for state in states_dict["New Zealand"]:
-    try:
-        generate_network(state, "New Zealand", cf)
-        plot_network(state, "New Zealand")
-    except ox._errors.EmptyOverpassResponse:
-        print(f"No data for {state}")
+for state in states_dict["Austria"]:
+    print(state)
+    street_network = StreetNetwork(state = state, country = "Austria")
+    street_network.generate_network(filter = cf)
+    # street_network.plot_network()
 
-# generate_network("Tasmania", "Australia", cf)
-# plot_network("Tasmania", "Australia")
-
-# graph = ox.graph_from_xml('OSM-Data/northern_territory.osm')
