@@ -3,6 +3,7 @@ import os
 # os.environ['USE_PYGEOS'] = '0'
 import osmnx as ox
 import pyrosm
+import warnings
 import numpy as np
 from config import states_dict, highway_filter, highway_filter_pyrosm
 
@@ -12,7 +13,7 @@ class StreetNetwork:
         self.filepath = filepath
         self.state = state
         self.country = country
-        self.savefile = f"networks/{self.country}/{self.state}.graphml"
+        self.savefile = f"street_networks/{self.country}/{self.state}.graphml"
         self.network = None
         self.saved_graph = False
 
@@ -41,7 +42,8 @@ class StreetNetwork:
         try:
             location = {'state': self.state, 'country': self.country}
             self.network = ox.graph_from_place(location, network_type="drive", custom_filter = filter)
-        except:
+        except Exception as e:
+            warnings.warn(f"Using city instead of state for {self.state}") 
             location = {'city': self.state, 'country': self.country}
             self.network = ox.graph_from_place(location, network_type="drive", custom_filter = filter)
         self.save_network()         
@@ -77,27 +79,11 @@ class StreetNetwork:
             writer.writeheader()
             writer.writerow(stats)
 
-# for state in states_dict["Austria"]:
-#     print(state)
-#     street_network = StreetNetwork(state = state, country = "Austria")
-#     street_network.generate_network(filter = highway_filter)
-#     street_network.plot_network()
 
-# street_network = StreetNetwork(state = "new_south_wales", country = "Australia", filepath = f"OSM-Data/new_south_wales_filtered2.osm")
-# street_network.generate_network_osm()
-# print(len(street_network.network.nodes), len(street_network.network.edges))
-# street_network.plot_network()
-
-# street_network = StreetNetwork(state = "new_south_wales", country = "Australia", filepath = f"OSM-Data/new_south_wales_filtered.osm.pbf")
-# street_network.generate_network_pyrosm()
-# print(len(street_network.network.nodes), len(street_network.network.edges))
-# street_network.plot_network()
-
-
-for state in states_dict["Australia"]:
-    print(state)
-    if state == "new_south_wales":
-        street_network = StreetNetwork(state = state, country = "Australia")
+def generate_street_networks(country, plot_network = True):
+    for state in states_dict[country]:
+        street_network = StreetNetwork(state = state, country = "Czechia")
         street_network.generate_network_overpass(filter = highway_filter)
-        print(len(street_network.network.nodes), len(street_network.network.edges))
-        street_network.plot_network()
+        if plot_network:
+            print(f"Showing street network for {state} with {len(street_network.nodes)} nodes and {len(street_network.network.edges)} edges.")
+            street_network.plot_network()

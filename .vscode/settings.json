@@ -5,6 +5,9 @@
     ],
     "spellright.documentTypes": [
         "markdown",
-        "latex"
-    ]
+        "plaintext"
+    ],
+    "files.exclude": {
+        "**/*.jpg": true
+    }
 }

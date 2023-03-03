@@ -82,14 +82,17 @@ class StreetViewImagesForState:
       self.save_coordinates(coordinates)
       self.current_id += 1
 
-def generate_images(country, number_of_total_locations):
+def generate_images(country, number_of_total_locations, proportional_to_network_size = True):
   # Make number of locations roughly proportional to the size of the street networks in the respective states
   num_of_images_per_state = {}
   total_number_of_edges = 0
   edges_dict = {}
   for state in states_dict[country]:
     with open(f"networks/{country}/{state}.csv", "r") as file:
-      edges_dict[state] = int(file.readlines()[-1].split(",")[1])
+      if proportional_to_network_size:
+        edges_dict[state] = int(file.readlines()[-1].split(",")[1])
+      else:
+        edges_dict[state] = 1
       total_number_of_edges += edges_dict[state]
 
   # Request images for each state
@@ -122,4 +125,4 @@ def remove_duplicates(country):
   print(f"{number_of_removed_images} images removed in {country}.")
 
 
-remove_duplicates("Austria")
+generate_images("Slovakia", 2000, True)
