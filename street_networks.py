@@ -1,6 +1,6 @@
 import csv
 import os
-# os.environ['USE_PYGEOS'] = '0'
+os.environ['USE_PYGEOS'] = '0'
 import osmnx as ox
 import pyrosm
 import warnings
@@ -9,20 +9,23 @@ from config import states_dict, highway_filter, highway_filter_pyrosm
 
 class StreetNetwork:
 
-    def __init__(self, state, country, filepath = None):
-        self.filepath = filepath
+    def __init__(self, state, country, osm_filepath = None):
+        self.osm_filepath = osm_filepath
         self.state = state
         self.country = country
-        self.savefile = f"street_networks/{self.country}/{self.state}.graphml"
         self.network = None
         self.saved_graph = False
+
+        self.savefolder = f"street_networks/{self.country}"
+        if not os.path.exists(self.savefolder):
+            os.makedirs(self.savefolder)
 
     def load_network(self, file = None):
         if file is not None:
             self.network = ox.load_graphml(file)
         else:
             if self.saved_graph:
-                self.network = ox.load_graphml(self.savefile)
+                self.network = ox.load_graphml(os.path.join(self.savefolder, f"{self.state}.graphml"))
             else:
                 raise Exception("No savefile specified to load the network from")
 
@@ -33,7 +36,7 @@ class StreetNetwork:
             raise Exception("Graph not yet generated")
     
     def generate_network(self, filter = None):
-        if self.filepath is None:
+        if self.osm_filepath is None:
             return self.generate_network_overpass(filter)
         else:
             return self.generate_network_osm()
@@ -49,7 +52,7 @@ class StreetNetwork:
         self.save_network()         
         
     def generate_network_osm(self):
-        self.network = ox.graph_from_xml(self.filepath)
+        self.network = ox.graph_from_xml(self.osm_filepath)
         self.save_network() 
 
     def generate_network_pyrosm(self):
@@ -60,14 +63,15 @@ class StreetNetwork:
 
     def save_network(self):
         if self.network is not None:
-            ox.save_graphml(self.network, self.savefile)
+            savefile = os.path.join(self.savefolder, f"{self.state}.graphml")
+            ox.save_graphml(self.network, savefile)
             self.save_stats()
             self.saved_graph = True
         else:
             raise Exception("Network not yet generated.")
 
     def save_stats(self):
-        savefile = f"networks/{self.country}/{self.state}.csv"
+        savefile = os.path.join(self.savefolder, f"{self.state}.csv")
         try:
             stats = ox.basic_stats(self.network, clean_int_tol=15)
         except Exception as e:
@@ -82,8 +86,11 @@ class StreetNetwork:
 
 def generate_street_networks(country, plot_network = True):
     for state in states_dict[country]:
-        street_network = StreetNetwork(state = state, country = "Czechia")
+        street_network = StreetNetwork(state = state, country = country)
         street_network.generate_network_overpass(filter = highway_filter)
         if plot_network:
-            print(f"Showing street network for {state} with {len(street_network.nodes)} nodes and {len(street_network.network.edges)} edges.")
+            print(f"Showing street network for {state} with {len(street_network.network.nodes)} nodes and {len(street_network.network.edges)} edges.")
             street_network.plot_network()
+
+
+generate_street_networks("New Zealand")

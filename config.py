@@ -7,5 +7,9 @@ states_dict = {"Austria": ["Lower Austria", "Upper Austria", "Burgenland", "Styr
                 }
 
 
-highway_filter = '["highway"~"motorway|trunk|primary|secondary|tertiary"]'
+highway_filter = '["highway"~"motorway|trunk|primary|secondary"]'
 highway_filter_pyrosm = {"highway": ["motorway", "trunk", "primary", "secondary"]}
+image_dir = "images"
+batch_size = 32
+img_height = 256
+img_width = 256

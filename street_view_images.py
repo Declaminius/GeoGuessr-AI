@@ -7,17 +7,19 @@ import csv
 import requests
 import warnings
 import pandas as pd
+import numpy as np
 
 class StreetViewImagesForState:
   api_key = os.environ.get('GOOGLE_MAPS_API_KEY')
   streetview_api = 'https://maps.googleapis.com/maps/api/streetview'
   metadata_api = 'https://maps.googleapis.com/maps/api/streetview/metadata'
 
+
   def __init__(self, state, country):
     self.state = state
     self.country = country
     self.imagepath = f"images/{country}/{state}"
-    self.graph_file = f"networks/{country}/{state}.graphml"
+    self.graph_file = f"street_networks/{country}/{state}.graphml"
     self.network = load_graphml(self.graph_file)
     self.csv_fieldnames = ["i", "lat", "lng"]
     self.init_coordinates_csv()
@@ -88,9 +90,9 @@ def generate_images(country, number_of_total_locations, proportional_to_network_
   total_number_of_edges = 0
   edges_dict = {}
   for state in states_dict[country]:
-    with open(f"networks/{country}/{state}.csv", "r") as file:
+    with open(f"street_networks/{country}/{state}.csv", "r") as file:
       if proportional_to_network_size:
-        edges_dict[state] = int(file.readlines()[-1].split(",")[1])
+        edges_dict[state] = np.sqrt(int(file.readlines()[-1].split(",")[1]))
       else:
         edges_dict[state] = 1
       total_number_of_edges += edges_dict[state]
@@ -125,4 +127,4 @@ def remove_duplicates(country):
   print(f"{number_of_removed_images} images removed in {country}.")
 
 
-generate_images("Slovakia", 2000, True)
+generate_images("New Zealand", 2000, True)
