@@ -4,7 +4,6 @@ os.environ['USE_PYGEOS'] = '0'
 import osmnx as ox
 import pyrosm
 import warnings
-import numpy as np
 from config import states_dict, highway_filter, highway_filter_pyrosm
 
 class StreetNetwork:

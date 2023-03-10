@@ -49,6 +49,7 @@ class StreetViewImagesForState:
         os.makedirs(self.imagepath)
       with open(os.path.join(self.imagepath, f'{self.current_id}.jpg'), "wb") as file:
         file.write(response.content)
+        self.current_id += 1
     else:
       print(response.json())
       print(f"ERROR in {self.state} at {self.current_id}")
@@ -79,10 +80,11 @@ class StreetViewImagesForState:
     # If an image is available, save it and its coordinates in the respective folder
     if metadata['status'] == 'OK':
       coordinates = metadata['location']
-      response = requests.get(self.streetview_api, params)
-      self.save_image(response)
-      self.save_coordinates(coordinates)
-      self.current_id += 1
+      image = requests.get(self.streetview_api, params)
+      response = (coordinates, image)
+      return response
+    else:
+      return None
 
 def generate_images(country, number_of_total_locations, proportional_to_network_size = True):
   # Make number of locations roughly proportional to the size of the street networks in the respective states
@@ -104,7 +106,10 @@ def generate_images(country, number_of_total_locations, proportional_to_network_
     points = streetview_images.generate_points(number_of_locations_state)
     num_images_before = streetview_images.current_id
     for location in points:
-      streetview_images.request_image(location)
+      response = streetview_images.request_image(location)
+      if response:
+        streetview_images.save_coordinates(response[0])
+        streetview_images.save_image(response[1])
     num_images_after = streetview_images.current_id
     num_of_images_per_state[state] = num_images_after
     print(f"{num_images_after - num_images_before} images of {number_of_locations_state} locations found in {state}. In total now {num_images_after} images in {state}.")
@@ -126,5 +131,5 @@ def remove_duplicates(country):
         number_of_removed_images += 1
   print(f"{number_of_removed_images} images removed in {country}.")
 
-
-generate_images("New Zealand", 2000, True)
+if __name__ == '__main__':
+  generate_images("New Zealand", 2000, True)
