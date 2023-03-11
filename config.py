@@ -49,3 +49,6 @@ train_ds224, val_ds224 = create_standardized_dataset(image_size = 224)
 train_ds32, val_ds32 = create_standardized_dataset(image_size = 32)
 
 model = keras.models.load_model('neural_net')
+
+baseline = tf.zeros(shape = ((256,256,3)))
+baseline_prediction = model(tf.expand_dims(baseline, axis = 0))

@@ -31,11 +31,3 @@ def evaluate_regressor(regressor, sample_size, train_ds, val_ds):
     print("Validation data:")
     val_accuracy = calculate_accuracy(regressor, val_images, val_labels)
     return train_accuracy, val_accuracy
-
-def plot_accuracy(accuracy_array, title = None):
-    mean = accuracy_array.mean(axis = 0)
-    std = accuracy_array.std(axis = 0)
-    xlabels = ["Training accuracy", "Validation accuracy"]
-    plt.bar(xlabels, mean, yerr = std, align='center', alpha=0.5, ecolor='black', capsize=10)
-    plt.axhline(0.5, linestyle = "dotted", color = "black")
-    plt.title(title)
