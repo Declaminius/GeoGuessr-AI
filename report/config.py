@@ -45,8 +45,19 @@ def create_standardized_dataset(image_size):
 
 
 train_ds, val_ds = create_standardized_dataset(image_size = 256)
-train_ds224, val_ds224 = create_standardized_dataset(image_size = 224)
 train_ds32, val_ds32 = create_standardized_dataset(image_size = 32)
+
+imagenet_ds = keras.utils.image_dataset_from_directory(
+        image_dir,
+        labels="inferred",
+        class_names=["Austria","Australia"],
+        seed = 0,
+        shuffle=False,
+        batch_size = batch_size,
+        crop_to_aspect_ratio=True,
+        image_size=(224, 224))
+imagenet_ds = imagenet_ds.map(standardize_image)
+imagenet_ds = imagenet_ds.prefetch(buffer_size = AUTOTUNE)
 
 model = keras.models.load_model('../neural_net')
 
