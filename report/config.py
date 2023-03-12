@@ -13,7 +13,6 @@ states_dict = {"Austria": ["Lower Austria", "Upper Austria", "Burgenland", "Styr
 highway_filter = '["highway"~"motorway|trunk|primary|secondary"]'
 highway_filter_pyrosm = {"highway": ["motorway", "trunk", "primary", "secondary"]}
 
-image_dir = "../images"
 batch_size = 32
 
 
@@ -23,12 +22,12 @@ def standardize_image(image, label):
     standardized_image = tf.map_fn(lambda x: (x - mean)/std, image)
     return (standardized_image, label)
 
-def create_standardized_dataset(image_size):
+def create_standardized_dataset(image_size, image_dir, class_names):
     train_ds, val_ds = keras.utils.image_dataset_from_directory(
         image_dir,
         validation_split=0.2,
         labels="inferred",
-        class_names=["Austria","Australia"],
+        class_names = class_names,
         subset="both",
         seed = 0,
         batch_size = batch_size,
@@ -44,11 +43,14 @@ def create_standardized_dataset(image_size):
     return train_ds, val_ds
 
 
-train_ds, val_ds = create_standardized_dataset(image_size = 256)
-train_ds32, val_ds32 = create_standardized_dataset(image_size = 32)
+train_ds, val_ds = create_standardized_dataset(image_size = 256, image_dir = "../images", class_names = ["Austria","Australia"])
+train_ds32, val_ds32 = create_standardized_dataset(image_size = 32, image_dir = "../images", class_names = ["Austria","Australia"])
+train_ds_multinomial, val_ds_multinomial = create_standardized_dataset(image_size = 256, 
+                                                                       image_dir = "../images_multinomial", 
+                                                                       class_names = ["Australia", "Austria", "Czechia", "New Zealand", "Slovakia"])
 
 imagenet_ds = keras.utils.image_dataset_from_directory(
-        image_dir,
+        "../images",
         labels="inferred",
         class_names=["Austria","Australia"],
         seed = 0,
@@ -60,6 +62,7 @@ imagenet_ds = imagenet_ds.map(standardize_image)
 imagenet_ds = imagenet_ds.prefetch(buffer_size = AUTOTUNE)
 
 model = keras.models.load_model('../neural_net')
+multinomial_model = keras.models.load_model('../multinomial_neural_net')
 
 baseline = tf.zeros(shape = ((256,256,3)))
 baseline_prediction = model(tf.expand_dims(baseline, axis = 0))
