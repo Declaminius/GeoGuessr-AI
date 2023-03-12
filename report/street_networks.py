@@ -15,7 +15,7 @@ class StreetNetwork:
         self.network = None
         self.saved_graph = False
 
-        self.savefolder = f"street_networks/{self.country}"
+        self.savefolder = f"../street_networks/{self.country}"
         if not os.path.exists(self.savefolder):
             os.makedirs(self.savefolder)
 
@@ -91,5 +91,6 @@ def generate_street_networks(country, plot_network = True):
             print(f"Showing street network for {state} with {len(street_network.network.nodes)} nodes and {len(street_network.network.edges)} edges.")
             street_network.plot_network()
 
+if __name__ == "__main__":
 
-generate_street_networks("New Zealand")
+    generate_street_networks("New Zealand")

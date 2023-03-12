@@ -18,8 +18,8 @@ class StreetViewImagesForState:
     def __init__(self, state, country):
         self.state = state
         self.country = country
-        self.imagepath = f"images/{country}/{state}"
-        self.graph_file = f"street_networks/{country}/{state}.graphml"
+        self.imagepath = f"../images/{country}/{state}"
+        self.graph_file = f"../street_networks/{country}/{state}.graphml"
         self.network = load_graphml(self.graph_file)
         self.csv_fieldnames = ["i", "lat", "lng"]
         self.init_coordinates_csv()
@@ -92,7 +92,7 @@ def generate_images(country, number_of_total_locations, proportional_to_network_
     total_number_of_edges = 0
     edges_dict = {}
     for state in states_dict[country]:
-        with open(f"street_networks/{country}/{state}.csv", "r") as file:
+        with open(f"../street_networks/{country}/{state}.csv", "r") as file:
             if proportional_to_network_size:
                 edges_dict[state] = np.sqrt(int(file.readlines()[-1].split(",")[1]))
             else:
@@ -121,18 +121,18 @@ def generate_images(country, number_of_total_locations, proportional_to_network_
 def remove_duplicates(country):
     number_of_removed_images = 0
     for state in states_dict[country]:
-        df = pd.read_csv(f"images/{country}/{state}/coordinates.csv")
+        df = pd.read_csv(f"../images/{country}/{state}/coordinates.csv")
         duplicates = df.duplicated(subset = ["lat", "lng"])
         duplicated_rows = df[duplicates]
     for index in duplicated_rows["i"]:
-        filepath = f"images/{country}/{state}/{index}.jpg"
+        filepath = f"../images/{country}/{state}/{index}.jpg"
         if os.path.isfile(filepath):
             os.remove(filepath)
             number_of_removed_images += 1
     print(f"{number_of_removed_images} images removed in {country}.")
 
 def check_image_exists(country):
-    for state in config.states_dict[country]:
+    for state in states_dict[country]:
         df = pd.read_csv(f"../images_multinomial/{country}/{state}/coordinates.csv")
         image_exists = []
         for index, row in df.iterrows():
