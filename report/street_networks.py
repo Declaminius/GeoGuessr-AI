@@ -33,12 +33,6 @@ class StreetNetwork:
             ox.plot_graph(self.network)
         else:
             raise Exception("Graph not yet generated")
-    
-    def generate_network(self, filter = None):
-        if self.osm_filepath is None:
-            return self.generate_network_overpass(filter)
-        else:
-            return self.generate_network_osm()
 
     def generate_network_overpass(self, filter):
         try:
@@ -88,7 +82,8 @@ def generate_street_networks(country, plot_network = True):
         street_network = StreetNetwork(state = state, country = country)
         street_network.generate_network_overpass(filter = highway_filter)
         if plot_network:
-            print(f"Showing street network for {state} with {len(street_network.network.nodes)} nodes and {len(street_network.network.edges)} edges.")
+            print(f"""Showing street network for {state} with {len(street_network.network.nodes)} nodes 
+                      and {len(street_network.network.edges)} edges.""")
             street_network.plot_network()
 
 if __name__ == "__main__":
